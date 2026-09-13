@@ -23,6 +23,9 @@
 ### 2.3. Phê duyệt (Approve)
 * Hướng đi và yêu cầu chỉ được chốt khi tôi xác nhận chính thức **"Approved"**.
 
+### 2.4. Bàn giao & thứ tự đọc cho `architect_agent`
+* PRD mở đầu bằng **Entry note** (điểm vào = Mục 1). Thứ tự đọc: Tổng quan/Mục tiêu → User Stories (ưu tiên) → FR/NFR → Ràng buộc. (Chi tiết: doc-00 Mục 10.5.)
+
 ## 3. Quy ước bắt buộc trong PRD
 ### 3.1. Mã định danh (ID) — phục vụ truy vết xuyên pipeline
 * User Story: `US-01`, `US-02`...
@@ -39,6 +42,8 @@ Xuất tài liệu theo **chính xác** khung Markdown sau (không đổi thứ 
 
 ~~~markdown
 # PRD — [Tên tính năng / dự án]
+
+> **Entry note:** `architect_agent` bắt đầu từ **Mục 1 (Tổng quan)** → Mục 4 (User Stories) → Mục 6/7 (FR/NFR).
 
 ## 1. Tổng quan & Mục tiêu nghiệp vụ
 [Bài toán cần giải, giá trị mang lại]

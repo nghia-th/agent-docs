@@ -332,6 +332,25 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 *   Đổi model = chỉ sửa đúng dòng `llm` của agent đó trong cấu hình CrewAI.
 
 
+### 10.5. Điểm vào & Thứ tự đọc khi bàn giao (Entry Point & Reading Order)
+*   Mỗi tài liệu bàn giao PHẢI mở đầu bằng một **Entry note** — một dòng chỉ rõ agent nhận bắt đầu đọc từ mục nào.
+*   Nguyên tắc: agent nhận đọc **phần định hướng công việc trước** (mục tiêu / danh sách việc), rồi tới đặc tả được tham chiếu, cuối cùng đối chiếu quy ước & tiêu chí chấp nhận. Cụ thể theo từng chặng:
+    *   `architect_agent` đọc PRD: Tổng quan/Mục tiêu → User Stories (ưu tiên) → FR/NFR → Ràng buộc.
+    *   `detail_designer_agent` đọc System Design: Thành phần & Ranh giới → API contract → ERD → Coding Conventions; đọc PRD để lấy Acceptance Criteria.
+    *   `coder_agent` đọc Detail Design: **Sơ đồ Task trước** (chọn task theo ưu tiên/phụ thuộc) → đặc tả mà task tham chiếu → Coding Conventions (trong System Design) → Acceptance Criteria (trong PRD).
+    *   `tester_agent` đọc Detail Design: **Sơ đồ Task** (lọc task độc lập/song song) → Definition of Done + Acceptance Criteria từng task.
+    *   `reviewer_agent` đọc: Coding Conventions + Detail Design + code, đối chiếu Acceptance Criteria/DoD.
+*   Luôn theo Context Isolation: chỉ nạp tài liệu của đúng module đang làm.
+
+
+### 10.6. Bảng theo dõi Task (Task Tracker) & Vòng đời trạng thái
+*   **Nguồn sự thật duy nhất** về tiến độ task là một file Task Tracker dùng chung (một file/module, ví dụ `task-tracker.md`), do `detail_designer_agent` khởi tạo từ Sơ đồ Task (mọi task = `Todo`).
+*   **Vòng đời trạng thái:** `Todo` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. Khi `Test-Fail` / `Review-Fail` → kéo task về `In-Progress` cho `coder_agent` sửa.
+*   **Ai cập nhật:** `coder_agent` (`In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
+*   **Cấu trúc:** `Task ID | Mô tả | FR/US | Ưu tiên | Phụ thuộc | Trạng thái | Cập nhật bởi | Ghi chú`.
+*   Post-Coding Summary và báo cáo test/review là chi tiết từng lượt; nhưng **trạng thái chuẩn luôn nằm ở Task Tracker**.
+
+
 ---
 
 ## 10 (EN). GLOBAL CONVENTIONS
@@ -355,3 +374,22 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 *   Each agent is identified by its **role** (`ba_agent`, `architect_agent`, `detail_designer_agent`, `coder_agent`, `tester_agent`, `reviewer_agent`) — NOT hardcoded to any model vendor.
 *   The model (LLM) behind each agent is just an `llm=<model>` config parameter, changeable anytime (cloud or local) without renaming agents or altering prompts/pipeline logic.
 *   Switching model = edit only that agent's `llm` line in the CrewAI configuration.
+
+
+### 10.5. Entry Point & Reading Order at Handoff
+*   Every handoff document MUST begin with an **Entry note** — one line stating where the receiving agent should start reading.
+*   Principle: the receiving agent reads the **work-orienting part first** (goals / work list), then the referenced specs, then checks conventions & acceptance criteria. Per stage:
+    *   `architect_agent` reads the PRD: Overview/Goals → User Stories (priority) → FR/NFR → Constraints.
+    *   `detail_designer_agent` reads System Design: Components & Boundaries → API contracts → ERD → Coding Conventions; reads the PRD for Acceptance Criteria.
+    *   `coder_agent` reads Detail Design: **Task map first** (pick tasks by priority/dependency) → the specs each task references → Coding Conventions (in System Design) → Acceptance Criteria (in PRD).
+    *   `tester_agent` reads Detail Design: **Task map** (filter independent/parallel tasks) → each task's Definition of Done + Acceptance Criteria.
+    *   `reviewer_agent` reads: Coding Conventions + Detail Design + code, checked against Acceptance Criteria/DoD.
+*   Always follow Context Isolation: load only the docs for the module currently in scope.
+
+
+### 10.6. Task Tracker & Status Lifecycle
+*   The **single source of truth** for task progress is a shared Task Tracker file (one per module, e.g. `task-tracker.md`), created by `detail_designer_agent` from the Task map (every task = `Todo`).
+*   **Status lifecycle:** `Todo` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. On `Test-Fail` / `Review-Fail` → move the task back to `In-Progress` for `coder_agent` to fix.
+*   **Who updates:** `coder_agent` (`In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
+*   **Columns:** `Task ID | Description | FR/US | Priority | Depends-on | Status | Updated-by | Notes`.
+*   Post-Coding Summary and test/review reports are per-run detail; the **authoritative status always lives in the Task Tracker**.
