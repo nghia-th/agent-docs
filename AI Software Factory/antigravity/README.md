@@ -1,0 +1,28 @@
+# Antigravity — Custom Agents + Rule cho AI Software Factory
+
+## Cách dùng
+Copy thư mục `.agents/` này vào **gốc repo** của anh (hoặc gốc workspace Antigravity).
+Cấu trúc:
+
+```
+.agents/
+├── agents/                 # 6 Custom Agents (mỗi file = 1 vai)
+│   ├── ba-agent.md
+│   ├── architect-agent.md
+│   ├── detail-designer-agent.md
+│   ├── coder-agent.md
+│   ├── tester-agent.md
+│   └── reviewer-agent.md
+└── rules/
+    └── ai-software-factory-conventions.md   # quy ước chung (Always On)
+```
+
+## Việc cần làm sau khi copy
+1. Mở từng file trong `agents/`, thay `model: <model>` bằng model anh muốn (mỗi vai có thể model khác nhau — đây là "swappable").
+2. Với `coder-agent`, `tester-agent`, `reviewer-agent`: mở dòng `# tools:` và cấp quyền đọc/ghi file + terminal (theo tên tool của Antigravity) để agent đụng được repo thật.
+3. (Tuỳ chọn) Đặt rule ở chế độ Always On trong panel Rules, hoặc để global tại `~/.gemini/GEMINI.md`.
+4. Gọi agent: chọn từ dropdown (main agent), hoặc CLI `agy --agent ba-agent`. Muốn tự bàn giao: tạo thêm 1 coordinator agent gọi các agent này làm subagent.
+
+## Nguồn nội dung
+- 6 file agent = nội dung doc-01 → doc-06 (thêm frontmatter).
+- File rule = bản rút gọn của doc-00 (quy ước chung).

@@ -28,6 +28,11 @@
 
 > **Entry note khi dán:** mở mỗi tài liệu theo thứ tự đọc đã ghi (doc-00 Mục 10.5). VD Architect đọc PRD từ Mục 1→4; Coder mở `task-tracker.md`/Sơ đồ Task trước.
 
+### 2.1. Chọn task kế tiếp khi chạy tay (thay cho orchestrator)
+* Chạy tay tuần tự → **không cần agent điều phối**; anh chính là người phân task.
+* Quy tắc chọn task kế: trong `task-tracker.md`, lấy task **`Todo` đã thỏa phụ thuộc** (task cha đã xong), rồi chọn **ưu tiên cao nhất** (Must → Should → Could) để làm.
+* **Một lượt một task**: làm xong (tới `Coded`/`Test-Pass`/`Review-Pass`/`Accepted`) mới lấy task kế. LLM không có trạng thái 'rảnh/bận', nên chạy song song nhiều coder chỉ cần khi tự động hoá (script hàng đợi).
+
 ## 3. Vòng lặp sửa lỗi
 * `Test-Fail` hoặc `Review-Fail` → đưa Bug Report/Review Feedback cho `coder_agent` → kéo task về `In-Progress` → sửa → `Coded` → test lại → review lại → khi `Review-Pass` mới trình PO.
 
