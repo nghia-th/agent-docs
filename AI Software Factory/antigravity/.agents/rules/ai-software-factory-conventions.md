@@ -7,6 +7,7 @@ trigger: always_on
 # AI Software Factory — Quy ước chung (áp dụng cho mọi agent)
 
 ## Pipeline 7 bước & agent phụ trách
+0. (Chỉ brownfield, một lần) Khảo sát codebase — `architect-agent` → `docs/codebase-overview.md`
 1. Phân tích yêu cầu — `ba-agent` → PRD, User Stories, User Flow
 2. Thiết kế hệ thống — `architect-agent` → kiến trúc, API contract, ERD, coding conventions
 3. Thiết kế chi tiết + chia Task — `detail-designer-agent` → Detail Design + Task Tracker
@@ -16,11 +17,11 @@ trigger: always_on
 7. Nghiệm thu — Product Owner (con người)
 
 ## Cổng duyệt của Product Owner (human)
-- Sau Bước 1 (duyệt yêu cầu), sau Bước 3 (duyệt kiến trúc & sơ đồ task), Bước 7 (nghiệm thu code).
+- Sau Bước 0 (duyệt codebase-overview, brownfield), sau Bước 1 (duyệt yêu cầu), sau Bước 2 (duyệt System Design), sau Bước 3 (duyệt Detail Design & sơ đồ task), Bước 7 (nghiệm thu code).
 - Không tự chuyển bước khi chưa có phê duyệt của PO ở các mốc này.
 
 ## Vòng lặp sửa lỗi
-- Bước 4→5→6 lặp: Test-Fail/Review-Fail → về `coder-agent` sửa → test lại → review lại. Chỉ khi test PASS + review PASS mới trình PO nghiệm thu.
+- Bước 4→5→6 lặp: Test-Fail/Review-Fail → về `coder-agent` sửa → test lại → review lại. Chỉ khi test PASS + review PASS mới trình PO nghiệm thu. Cùng một task Fail 2 lần liên tiếp → coder dừng (Halt & Query), PO can thiệp.
 
 ## Truy vết (Traceability)
 - BA sinh ID: `US-xx`, `FR-xx`, `NFR-xx`.
@@ -36,8 +37,8 @@ trigger: always_on
 
 ## Task Tracker (nguồn sự thật duy nhất về trạng thái task)
 - File dùng chung: `task-tracker.md` (một file/module), do `detail-designer-agent` khởi tạo (mọi task = `Todo`).
-- Vòng đời: `Todo` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. Fail → về `In-Progress`.
-- Ai cập nhật: coder (`In-Progress`,`Coded`); tester (`Test-Pass`/`Test-Fail`); reviewer (`Review-Pass`/`Review-Fail`); PO (`Accepted`).
+- Vòng đời: `Todo` → `Planning` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. `Test-Fail`/`Review-Fail` → `coder-agent` chuyển task về `In-Progress` khi bắt đầu sửa (tester/reviewer chỉ đặt trạng thái Fail).
+- Ai cập nhật: coder (`Planning`,`In-Progress`,`Coded`); tester (`Test-Pass`/`Test-Fail`); reviewer (`Review-Pass`/`Review-Fail`); PO (`Accepted`).
 - Cột: `Task ID | Mô tả | FR/US | Ưu tiên | Phụ thuộc | Trạng thái | Cập nhật bởi | Ghi chú`.
 
 ## Điểm vào & Thứ tự đọc (Entry note)

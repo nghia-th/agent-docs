@@ -25,4 +25,12 @@ Cấu trúc:
 
 ## Nguồn nội dung
 - 6 file agent = nội dung doc-01 → doc-06 (thêm frontmatter).
-- File rule = bản rút gọn của doc-00 (quy ước chung).
+- File rule = bản rút gọn của doc-00 (quy ước chung) — **cập nhật tay** khi doc-00 Mục 9/10 đổi (pipeline, cổng QA, vòng đời trạng thái).
+
+## Đồng bộ khi sửa doc-01 → doc-06
+Không sửa trực tiếp file trong `.agents/agents/`. Sửa ở doc gốc rồi chạy (từ thư mục `AI Software Factory`):
+
+```
+python3 antigravity/sync_agents.py          # tạo lại 6 file agent (giữ nguyên frontmatter, kể cả dòng model/tools anh đã điền)
+python3 antigravity/sync_agents.py --check  # chỉ kiểm tra lệch, không ghi (thoát mã 1 nếu có file lệch)
+```

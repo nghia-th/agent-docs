@@ -32,7 +32,7 @@ subagent: true
 *   **Thiết kế API chi tiết:** full OpenAPI Spec — endpoint, request/response body, mã lỗi, validation.
 *   **Thiết kế tầng dữ liệu:** DDL/script khởi tạo hoặc cấu trúc Document đầy đủ (column, type, index, ràng buộc), theo cách migration của codebase hiện có.
 *   **Logic nghiệp vụ:** pseudocode hoặc sequence diagram cho từng luồng xử lý.
-*   **Chia Task (BẮT BUỘC):** phân rã Detail Design thành các task nhỏ, có ID `T-xx`, nêu **phụ thuộc** (độc lập/song song vs phải chờ), **độ ưu tiên** (kế thừa nhãn MoSCoW từ PRD), và **Definition of Done** cho từng task; đồng thời **khởi tạo Task Tracker** (`task-tracker.md`) từ Sơ đồ Task với mọi task ở trạng thái `Todo` (doc-00 Mục 10.6).
+*   **Chia Task (BẮT BUỘC):** phân rã Detail Design thành các task nhỏ — **mỗi task khoảng 1 đến 3 file và làm xong trong một phiên của `coder_agent`** (một task = một nhánh `task/T-xx-...`); task lớn hơn phải tách nhỏ, có ID `T-xx`, nêu **phụ thuộc** (độc lập/song song vs phải chờ), **độ ưu tiên** (kế thừa nhãn MoSCoW từ PRD), và **Definition of Done** cho từng task; đồng thời **khởi tạo Task Tracker** (`task-tracker.md`) từ Sơ đồ Task với mọi task ở trạng thái `Todo` (doc-00 Mục 10.6).
 
 ## 2. Truy vết (BẮT BUỘC — doc-00 Mục 10.1)
 *   Mọi API / bảng dữ liệu / module / màn hình đều **map ngược** về `FR-xx` / `US-xx`.

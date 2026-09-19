@@ -38,11 +38,13 @@ Sơ đồ dưới đây thể hiện sự di chuyển của dữ liệu qua các
                ▼
     [ CODER & TESTER ] ────────────> (Thực thi Code)
                │                      - coder_agent: Logic chính, UI/UX chuẩn hóa.
-               │                      - tester_agent: Boilerplate, Test cases (chạy song song).
+               │                      - tester_agent: Test cases (sau khi Coded).
                ▼
     [ QA GATE - PO ] ───────────────> (Nghiệm thu mã nguồn & Triển khai)
 
 ## 5. Quy Trình Phối Hợp & Phê Duyệt (Workflow & QA Gate)
+
+> *Bảng này là bản nháp ban đầu; luồng chốt (đánh số bước, cổng QA) nằm ở **Mục 9**.*
 
 | Giai đoạn | Hành động cụ thể | Trách nhiệm |
 | :--- | :--- | :--- |
@@ -51,7 +53,7 @@ Sơ đồ dưới đây thể hiện sự di chuyển của dữ liệu qua các
 | **3. Thiết kế chi tiết (Detail Design)** | Nhận tài liệu nghiệp vụ từ ba_agent để tạo tài liệu thiết kế kỹ thuật: đặc tả API, cấu trúc cơ sở dữ liệu (schema), và sơ đồ luồng dữ liệu/component. | detail_designer_agent |
 | **4. Phân rã & Lập sơ đồ tác vụ** | Phân rã Detail Design thành các đầu việc nhỏ. Lập sơ đồ biểu diễn tính phụ thuộc (task nào độc lập làm song song, task nào phải chờ), đánh giá độ ưu tiên và chốt thứ tự thi công. | detail_designer_agent |
 | **5. Xây dựng mã nguồn** | Dựa trên bản Detail Design và Sơ đồ task đã duyệt, tuần tự viết code giao diện (HTML/React) và logic hệ thống đảm bảo tính sạch sẽ, không đụng độ (conflict). | coder_agent |
-| **6. Hỗ trợ tự động hóa** | Chạy các tác vụ sinh khung code phụ, viết test case song song cho các task độc lập dựa trên mã nguồn đã có. | tester_agent |
+| **6. Kiểm thử** | Viết và chạy test cho task đã `Coded`; test song song giữa các task độc lập, dựa trên mã nguồn và Detail Design đã duyệt. | tester_agent |
 | **7. QA Approval Gate** | Đánh giá, nghiệm thu các bản phác thảo tài liệu, sơ đồ task và mã nguồn ở từng bước. Chỉ khi được thông qua, hệ thống mới chuyển sang bước tiếp theo. | Product Owner (Anh) |
 
 ## 6. Hướng Dẫn Vận Hành Hệ Thống Bằng CrewAI
@@ -63,7 +65,7 @@ Sơ đồ dưới đây thể hiện sự di chuyển của dữ liệu qua các
     *   `architect_agent`: `role='System Architect'`, `goal='Thiết kế hệ thống, API contract, ERD, coding conventions'`.
     *   `detail_designer_agent`: `role='Detail Designer'`, `goal='Thiết kế chi tiết và chia sơ đồ Task'`.
     *   `coder_agent`: `role='Developer'`, `goal='Viết logic + UI bám Detail Design'`.
-    *   `tester_agent`: `role='Junior Developer'`, `goal='Sinh test case và boilerplate, chạy song song'`.
+    *   `tester_agent`: `role='QA & Test Engineer'`, `goal='Viết và chạy test cho task đã Coded, báo cáo Test-Pass/Test-Fail; song song giữa các task độc lập'`.
     *   `reviewer_agent`: `role='Code Reviewer / QA'`, `goal='Review code đối chiếu Detail Design & coding convention'`.
     *   *(Mỗi agent định danh theo VAI TRÒ; model đứng sau là cấu hình `llm=<model>` có thể đổi — xem Mục 10.4.)*
 *   **Định nghĩa Tác vụ (Tasks) & Thiết lập QA Gate:**
@@ -73,26 +75,20 @@ Sơ đồ dưới đây thể hiện sự di chuyển của dữ liệu qua các
     Gộp Agents và Tasks vào một `Crew`. Thiết lập tham số `process=Process.sequential` để đảm bảo luồng công việc chạy tuần tự đúng như sơ đồ. Khi các task độc lập được tạo ra (ở bước 4), có thể thiết lập `async_execution=True` cho các task của `tester_agent` để chạy song song.
 ## 7. Mẫu Prompt Chuẩn Cho Từng Tác Tử (Standardized Prompt Templates)
 
+> *System prompt chuẩn của từng agent là các tài liệu doc-01 … doc-06 (mỗi agent một tài liệu, theo Phương án A ở Mục 9). Mục này chỉ giữ mẫu tóm tắt của `ba_agent`.*
+
 Để các Agent hiểu đúng vai trò và sinh ra kết quả chuẩn, các System Prompt (hoặc `backstory` trong CrewAI) cần được thiết lập chặt chẽ:
 
 *   **`ba_agent` (Business Analyst):**
     > "Bạn là một Chuyên gia Phân tích Nghiệp vụ (Senior Business Analyst) dày dặn kinh nghiệm. Dựa trên yêu cầu ban đầu: [Mô tả ý tưởng], nhiệm vụ của bạn là phân tích và viết Đặc tả Yêu cầu (PRD) chi tiết. Hãy liệt kê danh sách các User Stories (theo chuẩn 'As a... I want to... So that...'), và vẽ sơ đồ luồng người dùng (User Flows). Kết quả phải được trình bày rõ ràng bằng định dạng Markdown."
 
-*   **`architect_agent` / `coder_agent` (Architect & Developer):**
-    > "Bạn là một Kiến trúc sư Hệ thống (Solution Architect) và Lập trình viên Trưởng (Lead Developer). Dựa trên [Tài liệu Nghiệp vụ / PRD] được cung cấp, hãy: 
-    > 1. Xây dựng Thiết kế Chi tiết (Detail Design) bao gồm đặc tả API, Schema DB.
-    > 2. Phân rã thiết kế thành sơ đồ các Task, chỉ rõ độ ưu tiên và tính phụ thuộc. 
-    > 3. Tiến hành viết mã nguồn (UI/UX và Logic Code) tuân thủ nghiêm ngặt cấu trúc codebase hiện tại. 
-    > Tuyệt đối không sinh code thừa, luôn bám sát tài liệu Detail Design."
-
-*   **`tester_agent` (Junior Developer / Supporter):**
-    > "Bạn là một Lập trình viên Phụ trợ (Junior Developer). Dựa trên [Detail Design] và [Mã nguồn Core] do Lead Developer vừa tạo ra, hãy sinh các đoạn mã boilerplate cần thiết và viết các Unit Test Cases bao phủ toàn bộ logic. Đảm bảo code của bạn chạy độc lập và không phá vỡ cấu trúc chính."
+*   **`architect_agent`, `detail_designer_agent`, `coder_agent`, `tester_agent`, `reviewer_agent`:** dùng trực tiếp doc-02, doc-03, doc-04, doc-05, doc-06 làm system prompt. Không dùng prompt gộp vai (Architect + Coder) và không dùng vai 'Junior Developer' như bản nháp cũ.
 
 ## 8. Kỹ Thuật Tối Ưu Hóa Ngữ Cảnh (Context Optimization Strategies)
 
 Để các AI Agent (đặc biệt là các LLM có giới hạn Context Window) hiểu ngữ cảnh tốt nhất mà không bị "loãng" thông tin, dự án áp dụng các nguyên tắc sau:
 
-1.  **Chaining (Tiếp nối dữ liệu khép kín):** Tuyệt đối không bắt AI tự suy luận lại từ đầu. Đầu ra (Output) của tác vụ trước phải là Đầu vào (Input) của tác vụ sau. Ví dụ: `coder_agent` sinh code *chỉ* dựa trên file PRD của `ba_agent` đã được Product Owner duyệt, không dựa trên các ý tưởng rời rạc.
+1.  **Chaining (Tiếp nối dữ liệu khép kín):** Tuyệt đối không bắt AI tự suy luận lại từ đầu. Đầu ra (Output) của tác vụ trước phải là Đầu vào (Input) của tác vụ sau. Ví dụ: `coder_agent` sinh code *chỉ* dựa trên Detail Design (kèm Coding Conventions và Acceptance Criteria) đã được Product Owner duyệt, không dựa trên các ý tưởng rời rạc.
 2.  **Context Isolation (Cô lập ngữ cảnh):** Khi giao việc sinh code cho một module cụ thể (VD: Quản lý User), chỉ cung cấp cho AI cấu trúc thư mục và Detail Design của *riêng module đó*. Không nhồi nhét toàn bộ codebase khổng lồ vào Prompt để tránh làm AI bị "ảo giác" (hallucination) và quên mất trọng tâm.
 3.  **Strict Formatting (Định dạng nghiêm ngặt):** Luôn yêu cầu AI trả về kết quả bằng định dạng chuẩn (Markdown đối với tài liệu, hoặc JSON đối với dữ liệu cấu trúc). Việc này giúp hệ thống CrewAI dễ dàng parse (trích xuất) dữ liệu để truyền đi tự động.
 4.  **Reference Injecting (Tiêm tài liệu tham chiếu):** Nếu cần AI code UI, hãy "tiêm" thêm [Brand Guidelines] và [UI Components hiện có] vào Prompt để buộc AI sử dụng lại các component đã định nghĩa thay vì tự chế ra CSS mới.
@@ -139,11 +135,13 @@ The diagram below illustrates the flow of data through the AI Agents and the Pro
                ▼
     [ CODER & TESTER ] ────────────> (Code Implementation)
                │                      - coder_agent: Core logic, standardized UI/UX.
-               │                      - tester_agent: Boilerplate, Test cases (parallel).
+               │                      - tester_agent: Test cases (after Coded).
                ▼
     [ QA GATE - PO ] ───────────────> (Final Code Review & Deployment)
 
 ## 5. Coordinated Execution & Approval Workflow
+
+> *This table is the original draft; the finalized flow (step numbering, QA gates) is in **Section 9 (EN)**.*
 
 | Phase | Action Items | Assigned To |
 | :--- | :--- | :--- |
@@ -152,7 +150,7 @@ The diagram below illustrates the flow of data through the AI Agents and the Pro
 | **3. Detailed Technical Design** | Process the business requirements to generate comprehensive technical blueprints: API specifications, database schemas, and component/data flow diagrams. | detail_designer_agent |
 | **4. Task Breakdown & Prioritization** | Deconstruct the Detailed Design into granular tasks. Map out task dependencies (identifying independent vs. sequential tasks) and assign priority levels to establish a conflict-free execution order. | detail_designer_agent |
 | **5. Code Implementation** | Translate the tasks and Detailed Design into clean, standard-compliant UI/UX (HTML/React) and core logic code, following the strictly prioritized execution sequence. | coder_agent |
-| **6. Automated Assistance** | Generate auxiliary boilerplate components and unit test cases in parallel for independent tasks based on the approved Detailed Design. | tester_agent |
+| **6. Testing** | Write and run tests for tasks in `Coded` state; run in parallel across independent tasks, based on the source code and the approved Detailed Design. | tester_agent |
 | **7. QA Approval Gate** | Review and rigorously test all generated documentation, technical designs, task priorities, and code at each step. AI outputs must receive explicit sign-off before progressing. | Product Owner (User) |
 
 ## 6. CrewAI Implementation Guide
@@ -163,7 +161,7 @@ To operationalize the workflow above, the CrewAI configuration will be structure
     *   `architect_agent`: `role='System Architect'`, `goal='Design architecture, API contracts, ERD, coding conventions'`.
     *   `detail_designer_agent`: `role='Detail Designer'`, `goal='Detailed design and task breakdown'`.
     *   `coder_agent`: `role='Developer'`, `goal='Implement logic + UI following Detail Design'`.
-    *   `tester_agent`: `role='Junior Developer'`, `goal='Generate test cases and boilerplate, run in parallel'`.
+    *   `tester_agent`: `role='QA & Test Engineer'`, `goal='Write and run tests for Coded tasks, report Test-Pass/Test-Fail; parallel across independent tasks'`.
     *   `reviewer_agent`: `role='Code Reviewer / QA'`, `goal='Review code against Detail Design & coding conventions'`.
     *   *(Each agent is identified by ROLE; the backing model is a swappable `llm=<model>` config — see Section 10.4.)*
 *   **Task Definition & QA Gates:**
@@ -175,26 +173,20 @@ To operationalize the workflow above, the CrewAI configuration will be structure
 
 ## 7. Standardized Prompt Templates
 
+> *The standard system prompt of each agent is doc-01 … doc-06 (one document per agent, Option A in Section 9). This section only keeps the short `ba_agent` sample.*
+
 To ensure agents perform their roles accurately, System Prompts (or `backstory` in CrewAI) must be strictly defined:
 
 *   **`ba_agent` (Business Analyst):**
     > "You are a highly experienced Senior Business Analyst. Based on the initial request: [Idea Description], your task is to analyze and write a detailed Product Requirements Document (PRD). Outline comprehensive User Stories (using the 'As a... I want to... So that...' format) and map out the User Flows. The final output must be strictly formatted in Markdown."
 
-*   **`architect_agent` / `coder_agent` (Architect & Developer):**
-    > "You are a Solution Architect and Lead Developer. Based on the provided [PRD / Business Documentation], you must:
-    > 1. Create a Detailed Technical Design including API specifications and Database Schemas.
-    > 2. Break down this design into a prioritized Task Map, explicitly stating task dependencies.
-    > 3. Implement the source code (UI/UX and Core Logic) in strict adherence to the existing codebase structure.
-    > Do not generate redundant code. Strictly follow the Detailed Design."
-
-*   **`tester_agent` (Junior Developer / Supporter):**
-    > "You are a Junior Support Developer. Based on the [Detailed Design] and the [Core Code] generated by the Lead Developer, your task is to generate necessary boilerplate code and write comprehensive Unit Test Cases covering the core logic. Ensure your code is isolated and does not break the main architecture."
+*   **`architect_agent`, `detail_designer_agent`, `coder_agent`, `tester_agent`, `reviewer_agent`:** use doc-02, doc-03, doc-04, doc-05, doc-06 directly as system prompts. Do not use the merged Architect + Coder prompt or the 'Junior Developer' role from the old draft.
 
 ## 8. Context Optimization Strategies
 
 To maximize AI comprehension and prevent context dilution (especially important for limited Context Windows), the following principles must be enforced:
 
-1.  **Strict Data Chaining:** Never force the AI to guess the context from scratch. The approved Output of a preceding task must serve as the precise Input for the next. For example, `coder_agent` must generate code *only* based on the PO-approved PRD from `ba_agent`, never from fragmented chat history.
+1.  **Strict Data Chaining:** Never force the AI to guess the context from scratch. The approved Output of a preceding task must serve as the precise Input for the next. For example, `coder_agent` must generate code *only* based on the PO-approved Detail Design (with Coding Conventions and Acceptance Criteria), never from fragmented chat history.
 2.  **Context Isolation:** When assigning a task for a specific module (e.g., User Management), only feed the AI the directory structure and Detailed Design *relevant to that specific module*. Avoid stuffing the entire monolithic codebase into the prompt to prevent AI hallucination and context loss.
 3.  **Strict Formatting Enforcement:** Always command the AI to output responses in standard formats (Markdown for documentation, JSON for structured data). This allows the CrewAI framework to reliably parse and pass data downstream.
 4.  **Reference Injecting:** When generating UI code, explicitly inject [Brand Guidelines] and [Existing UI Components] into the prompt. This forces the AI to reuse established styling instead of hallucinating new CSS classes.
@@ -208,11 +200,12 @@ To maximize AI comprehension and prevent context dilution (especially important 
 
 | Bước | Giai đoạn | Agent phụ trách | Đầu ra |
 | :---: | :--- | :--- | :--- |
+| 0 | Khảo sát codebase *(chỉ brownfield, một lần đầu dự án)* | `architect_agent` | `codebase-overview.md` (kiến trúc, convention, lệnh build/lint/test hiện có) |
 | 1 | Phân tích yêu cầu | `ba_agent` (Business Analyst) | PRD, User Stories, User Flow |
 | 2 | Thiết kế hệ thống | `architect_agent` (System Architect) | Kiến trúc, tech stack, API contract, ERD, coding conventions |
 | 3 | Thiết kế chi tiết (Task) | `detail_designer_agent` | Detail Design + sơ đồ Task (dependency, priority) |
 | 4 | Viết code | `coder_agent` | Logic code + UI/UX |
-| 5 | Test | `tester_agent` | Unit test / test cases (chạy song song) |
+| 5 | Test | `tester_agent` | Unit/Integration/E2E test + Test Report (task đã `Coded`; song song giữa các task độc lập) |
 | 6 | Review | `reviewer_agent` (agent RIÊNG) | Báo cáo review: đạt/không đạt chuẩn |
 | 7 | Nghiệm thu | Product Owner (Anh) | Ký duyệt cuối & triển khai |
 
@@ -221,11 +214,16 @@ To maximize AI comprehension and prevent context dilution (especially important 
 *   **Phương án A — mỗi bước một agent riêng:** không gộp vai. Người thiết kế, người code và người review là các agent tách biệt để rõ trách nhiệm và tránh giẫm chân / tự bênh code.
 *   **Tách agent Reviewer:** người viết code (`coder_agent`) và người review (`reviewer_agent`) là hai agent khác nhau. Không để agent tự review code của chính mình. Không giao review cho `tester_agent` (model yếu hơn, khó bắt lỗi chuẩn kiến trúc).
 *   **Nội dung Review kiểm tra:** đúng coding convention, bám sát Detail Design, không sinh code thừa, pass lint, test cover đúng logic.
-*   **Vòng lặp sửa lỗi:** Bước 4 → 5 → 6 là một vòng lặp. Nếu Review KHÔNG đạt → quay lại Bước 4 sửa → test lại → review lại. Chỉ khi **test PASS + review PASS** mới lên Bước 7.
-*   **Cổng QA của Product Owner (human_input=True):** đặt tại 3 mốc — (a) sau Bước 1 (duyệt yêu cầu), (b) sau Bước 3 (duyệt kiến trúc & sơ đồ task), (c) Bước 7 (nghiệm thu code). Dù Reviewer là AI, cổng nghiệm thu của con người ở Bước 7 vẫn là chốt chặn cuối cùng.
+*   **Vòng lặp sửa lỗi:** Bước 4 → 5 → 6 là một vòng lặp. Nếu Review KHÔNG đạt → quay lại Bước 4 sửa → test lại → review lại. Chỉ khi **test PASS + review PASS** mới lên Bước 7. Nếu cùng một task bị Fail **2 lần liên tiếp** → `coder_agent` dừng (Halt & Query) và Product Owner can thiệp (xem doc-07 Mục 6.7).
+*   **Cổng QA của Product Owner (human_input=True):** đặt tại các mốc — (a) sau Bước 0 (duyệt `codebase-overview.md`, chỉ brownfield), (b) sau Bước 1 (duyệt yêu cầu), (c) sau Bước 2 (duyệt System Design), (d) sau Bước 3 (duyệt Detail Design & sơ đồ task), (e) Bước 7 (nghiệm thu code). Dù Reviewer là AI, cổng nghiệm thu của con người ở Bước 7 vẫn là chốt chặn cuối cùng.
 
 ### 9.3. Sơ đồ luồng chốt
 
+    [ Codebase có sẵn ] ─► 0. architect_agent ─► codebase-overview.md   (chỉ brownfield, một lần)
+             │
+        [ QA GATE - PO ] ───────> Duyệt hiện trạng codebase
+             │
+             ▼
     [ Ý Tưởng / Yêu Cầu ]
              │
              ▼
@@ -236,6 +234,8 @@ To maximize AI comprehension and prevent context dilution (especially important 
              ▼
     2. architect_agent ───────> Thiết kế hệ thống (kiến trúc, API contract, ERD)
              │
+        [ QA GATE - PO ] ───────> Duyệt System Design
+             │
              ▼
     3. detail_designer_agent ─> Thiết kế chi tiết + Sơ đồ Task
              │
@@ -245,7 +245,7 @@ To maximize AI comprehension and prevent context dilution (especially important 
     ┌───► 4. coder_agent ─────> Viết code (logic + UI)
     │        │
     │        ▼
-    │    5. tester_agent ──> Test / boilerplate (song song)
+    │    5. tester_agent ──> Test (task đã Coded; song song giữa task độc lập)
     │        │
     │        ▼
     │    6. reviewer_agent ───> Review: đúng chuẩn? bám Detail Design?
@@ -260,10 +260,10 @@ To maximize AI comprehension and prevent context dilution (especially important 
 Mỗi bước là một agent riêng (thay thế danh sách 3 agent ở Mục 6):
 
 *   `ba_agent`              — role='Business Analyst' (Bước 1)
-*   `architect_agent`       — role='System Architect' (Bước 2)
+*   `architect_agent`       — role='System Architect' (Bước 0 nếu brownfield, và Bước 2)
 *   `detail_designer_agent` — role='Detail Designer' (Bước 3)
 *   `coder_agent`           — role='Developer' (Bước 4)
-*   `tester_agent`       — role='Junior Developer' (Bước 5: test + boilerplate)
+*   `tester_agent`          — role='QA & Test Engineer' (Bước 5: test)
 *   `reviewer_agent`        — role='Code Reviewer / QA Engineer' (Bước 6)
 
 Product Owner (con người) giữ vai nghiệm thu ở Bước 7 và các cổng QA (`human_input=True`).
@@ -278,11 +278,12 @@ Product Owner (con người) giữ vai nghiệm thu ở Bước 7 và các cổn
 
 | Step | Phase | Agent | Output |
 | :---: | :--- | :--- | :--- |
+| 0 | Codebase Survey *(brownfield only, once per project)* | `architect_agent` | `codebase-overview.md` (existing architecture, conventions, build/lint/test commands) |
 | 1 | Requirements Analysis | `ba_agent` (Business Analyst) | PRD, User Stories, User Flow |
 | 2 | System Design | `architect_agent` (System Architect) | Architecture, tech stack, API contracts, ERD, coding conventions |
 | 3 | Detailed Design (Tasks) | `detail_designer_agent` | Detail Design + Task map (dependency, priority) |
 | 4 | Coding | `coder_agent` | Logic code + UI/UX |
-| 5 | Testing | `tester_agent` | Unit tests / test cases (parallel) |
+| 5 | Testing | `tester_agent` | Unit/Integration/E2E tests + Test Report (tasks in `Coded` state; parallel across independent tasks) |
 | 6 | Review | `reviewer_agent` (SEPARATE agent) | Review report: pass/fail |
 | 7 | Acceptance | Product Owner | Final sign-off & deployment |
 
@@ -291,18 +292,18 @@ Product Owner (con người) giữ vai nghiệm thu ở Bước 7 và các cổn
 *   **Option A — one agent per step:** no role merging. Designer, coder, and reviewer are separate agents for clear ownership and to avoid overlap / self-bias.
 *   **Separate Reviewer agent:** the coder (`coder_agent`) and the reviewer (`reviewer_agent`) are distinct agents. An agent never reviews its own code. `tester_agent` is not used for review (weaker, misses architectural-standard issues).
 *   **Review checklist:** coding conventions, adherence to Detail Design, no redundant code, lint passing, tests covering the intended logic.
-*   **Fix loop:** Steps 4 → 5 → 6 form a loop. If Review fails → back to Step 4 → re-test → re-review. Only when tests PASS + review PASS does it advance to Step 7.
-*   **PO QA Gates (human_input=True):** at 3 milestones — (a) after Step 1, (b) after Step 3, (c) Step 7. The human acceptance gate at Step 7 remains the final, non-removable checkpoint.
+*   **Fix loop:** Steps 4 → 5 → 6 form a loop. If Review fails → back to Step 4 → re-test → re-review. Only when tests PASS + review PASS does it advance to Step 7. If the same task fails **twice in a row** → `coder_agent` halts (Halt & Query) and the Product Owner intervenes (see doc-07 Section 6.7).
+*   **PO QA Gates (human_input=True):** at these milestones — (a) after Step 0 (approve `codebase-overview.md`, brownfield only), (b) after Step 1, (c) after Step 2 (approve System Design), (d) after Step 3 (approve Detail Design & task map), (e) Step 7. The human acceptance gate at Step 7 remains the final, non-removable checkpoint.
 
 ### 9.4. CrewAI Configuration (Option A — fully separated agents)
 
 Each step is its own agent (supersedes the 3-agent list in Section 6):
 
 *   `ba_agent`              — role='Business Analyst' (Step 1)
-*   `architect_agent`       — role='System Architect' (Step 2)
+*   `architect_agent`       — role='System Architect' (Step 0 if brownfield, and Step 2)
 *   `detail_designer_agent` — role='Detail Designer' (Step 3)
 *   `coder_agent`           — role='Developer' (Step 4)
-*   `tester_agent`       — role='Junior Developer' (Step 5: tests + boilerplate)
+*   `tester_agent`          — role='QA & Test Engineer' (Step 5: tests)
 *   `reviewer_agent`        — role='Code Reviewer / QA Engineer' (Step 6)
 
 The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_input=True`).
@@ -345,8 +346,8 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 
 ### 10.6. Bảng theo dõi Task (Task Tracker) & Vòng đời trạng thái
 *   **Nguồn sự thật duy nhất** về tiến độ task là một file Task Tracker dùng chung (một file/module, ví dụ `task-tracker.md`), do `detail_designer_agent` khởi tạo từ Sơ đồ Task (mọi task = `Todo`).
-*   **Vòng đời trạng thái:** `Todo` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. Khi `Test-Fail` / `Review-Fail` → kéo task về `In-Progress` cho `coder_agent` sửa.
-*   **Ai cập nhật:** `coder_agent` (`In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
+*   **Vòng đời trạng thái:** `Todo` → `Planning` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. Khi `Test-Fail` / `Review-Fail` → `tester_agent`/`reviewer_agent` chỉ đặt trạng thái Fail; **chính `coder_agent` chuyển task về `In-Progress`** khi bắt đầu sửa.
+*   **Ai cập nhật:** `coder_agent` (`Planning`, `In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
 *   **Cấu trúc:** `Task ID | Mô tả | FR/US | Ưu tiên | Phụ thuộc | Trạng thái | Cập nhật bởi | Ghi chú`.
 *   Post-Coding Summary và báo cáo test/review là chi tiết từng lượt; nhưng **trạng thái chuẩn luôn nằm ở Task Tracker**.
 
@@ -389,7 +390,7 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 
 ### 10.6. Task Tracker & Status Lifecycle
 *   The **single source of truth** for task progress is a shared Task Tracker file (one per module, e.g. `task-tracker.md`), created by `detail_designer_agent` from the Task map (every task = `Todo`).
-*   **Status lifecycle:** `Todo` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. On `Test-Fail` / `Review-Fail` → move the task back to `In-Progress` for `coder_agent` to fix.
-*   **Who updates:** `coder_agent` (`In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
+*   **Status lifecycle:** `Todo` → `Planning` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. On `Test-Fail` / `Review-Fail` → `tester_agent`/`reviewer_agent` only set the Fail status; **`coder_agent` itself moves the task back to `In-Progress`** when it starts fixing.
+*   **Who updates:** `coder_agent` (`Planning`, `In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
 *   **Columns:** `Task ID | Description | FR/US | Priority | Depends-on | Status | Updated-by | Notes`.
 *   Post-Coding Summary and test/review reports are per-run detail; the **authoritative status always lives in the Task Tracker**.

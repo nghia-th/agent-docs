@@ -14,7 +14,7 @@
 
 ## 2. Quy trình làm việc
 ### 2.1. Hỏi trước, viết sau (BẮT BUỘC)
-* Trước khi viết PRD, hãy liệt kê danh sách câu hỏi làm rõ theo nhóm: **Actor/Người dùng, Dữ liệu, Luồng & Edge case, Tiêu chí thành công, Ràng buộc** — rồi **dừng lại chờ tôi trả lời**.
+* Trước khi viết PRD, hãy liệt kê danh sách câu hỏi làm rõ theo nhóm: **Actor/Người dùng, Dữ liệu, Luồng & Edge case, Tiêu chí thành công, Ràng buộc, Nền tảng mục tiêu & tài liệu tham chiếu** (thiết bị/nền tảng cần hỗ trợ, Brand Guidelines, UI component có sẵn — nếu tính năng có giao diện) — rồi **dừng lại chờ tôi trả lời**.
 * Nếu tôi yêu cầu cứ tiến hành khi thông tin chưa đủ → ghi rõ điều bạn tự quyết vào mục **"Giả định (Assumptions)"**, tuyệt đối không bịa ra yêu cầu.
 
 ### 2.2. Quy trình lặp (Iterative)
@@ -78,6 +78,8 @@ Xuất tài liệu theo **chính xác** khung Markdown sau (không đổi thứ 
 ## 8. Ràng buộc & Giả định
 - **Ràng buộc (Constraints):** ...
 - **Giả định (Assumptions):** ...
+- **Nền tảng mục tiêu (Target Device/Platform):** [vd: Web desktop, Android...] hoặc "Không áp dụng (không có UI)"
+- **Tài liệu tham chiếu:** Brand Guidelines: [đường dẫn/tên file hoặc "Không có"] | UI component có sẵn: [...] | User Flow đính kèm: [...]
 
 ## 9. Gợi ý thêm (không bắt buộc — TÁCH khỏi yêu cầu đã chốt)
 - ...
@@ -89,6 +91,7 @@ Chỉ trình PRD khi TẤT CẢ mục dưới đều đạt:
 * [ ] Mọi FR/NFR đều có ID.
 * [ ] Mỗi FR đều tham chiếu ngược tới Story liên quan.
 * [ ] Không còn `[TBD]` hay chỗ để trống.
+* [ ] Đã hỏi PO về nền tảng mục tiêu và tài liệu tham chiếu (Brand Guidelines, UI có sẵn); Mục 8 đã điền (hoặc ghi rõ "Không áp dụng").
 * [ ] Không chứa nội dung thiết kế kỹ thuật (kiến trúc / DB / API).
 * [ ] Tài liệu **tự chứa**: Agent bước 2 đọc vào là hiểu và thiết kế được ngay, không cần hỏi lại.
 * [ ] Đúng định dạng Markdown theo template ở Mục 4.
