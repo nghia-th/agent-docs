@@ -108,6 +108,7 @@ Nếu dự án đã có codebase và **chưa có** `docs/codebase-overview.md` �
 | Lớp | Công nghệ | Kế thừa / Mới | Lý do / Trade-off |
 |---|---|---|---|
 | ... | ... | Kế thừa | ... |
+* Nếu dự án có giao diện: ghi rõ **frontend framework và UI library** (kế thừa/mới, lý do) — `ui_ux_agent` (Bước 2.5) thiết kế đúng theo thư viện này. Kiến trúc frontend (cấu trúc thư mục, cách gọi API, quản lý state) đặt trong Coding Conventions để `frontend_coder_agent` tuân theo.
 
 ## 8. Luồng dữ liệu cấp cao
 [Mô tả tổng quát]
@@ -152,6 +153,7 @@ Chỉ bàn giao khi TẤT CẢ đều đạt:
 * [ ] Có sơ đồ kiến trúc và sơ đồ triển khai (Mermaid).
 * [ ] Các quyết định lớn đều có ADR (phương án thay thế + lý do chọn).
 * [ ] Tech stack ghi rõ kế thừa/mới kèm lý do/trade-off.
+* [ ] Nếu có giao diện: đã nêu frontend framework và UI library, và quy ước frontend trong Coding Conventions.
 * [ ] NFR có chỉ tiêu đo được khi có thể.
 * [ ] API dừng ở mức endpoint + mục đích (KHÔNG full schema — nhường Bước 3).
 * [ ] Dữ liệu dừng ở mức ERD thực thể (KHÔNG full column/type — nhường Bước 3).

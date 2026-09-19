@@ -196,15 +196,16 @@ To maximize AI comprehension and prevent context dilution (especially important 
 
 > Phần này chốt lại và thay thế sơ đồ nháp ở Mục 4. Đây là luồng chuẩn được Product Owner phê duyệt.
 
-### 9.1. Bảy bước & agent phụ trách
+### 9.1. Các bước & agent phụ trách (bảy bước chính, thêm Bước 2.5 cho dự án có giao diện)
 
 | Bước | Giai đoạn | Agent phụ trách | Đầu ra |
 | :---: | :--- | :--- | :--- |
 | 0 | Khảo sát codebase *(chỉ brownfield, một lần đầu dự án)* | `architect_agent` | `codebase-overview.md` (kiến trúc, convention, lệnh build/lint/test hiện có) |
 | 1 | Phân tích yêu cầu | `ba_agent` (Business Analyst) | PRD, User Stories, User Flow |
 | 2 | Thiết kế hệ thống | `architect_agent` (System Architect) | Kiến trúc, tech stack, API contract, ERD, coding conventions |
+| 2.5 | Thiết kế UI/UX *(chỉ khi dự án có giao diện)* | `ui_ux_agent` (UI/UX Designer) | Design System (tokens, component) + UX Spec (màn hình `SCR-xx`, luồng, trạng thái, nội dung chữ) |
 | 3 | Thiết kế chi tiết (Task) | `detail_designer_agent` | Detail Design + sơ đồ Task (dependency, priority) |
-| 4 | Viết code | `coder_agent` | Logic code + UI/UX |
+| 4 | Viết code | `backend_coder_agent` (task `[BE]`), `frontend_coder_agent` (task `[FE]`) | Code backend / code giao diện + Plan + Summary |
 | 5 | Test | `tester_agent` | Unit/Integration/E2E test + Test Report (task đã `Coded`; song song giữa các task độc lập) |
 | 6 | Review | `reviewer_agent` (agent RIÊNG) | Báo cáo review: đạt/không đạt chuẩn |
 | 7 | Nghiệm thu | Product Owner (Anh) | Ký duyệt cuối & triển khai |
@@ -212,10 +213,11 @@ To maximize AI comprehension and prevent context dilution (especially important 
 ### 9.2. Nguyên tắc
 
 *   **Phương án A — mỗi bước một agent riêng:** không gộp vai. Người thiết kế, người code và người review là các agent tách biệt để rõ trách nhiệm và tránh giẫm chân / tự bênh code.
+*   **Hai biến thể coder:** `backend_coder_agent` chỉ làm task `[BE]`, `frontend_coder_agent` chỉ làm task `[FE]` (dùng quy trình doc-04 cộng doc-09). `detail_designer_agent` gắn nhãn `[BE]`/`[FE]` cho từng task. Gọi chung là `coder_agent` khi quy tắc áp dụng cho cả hai.
 *   **Tách agent Reviewer:** người viết code (`coder_agent`) và người review (`reviewer_agent`) là hai agent khác nhau. Không để agent tự review code của chính mình. Không giao review cho `tester_agent` (model yếu hơn, khó bắt lỗi chuẩn kiến trúc).
 *   **Nội dung Review kiểm tra:** đúng coding convention, bám sát Detail Design, không sinh code thừa, pass lint, test cover đúng logic.
 *   **Vòng lặp sửa lỗi:** Bước 4 → 5 → 6 là một vòng lặp. Nếu Review KHÔNG đạt → quay lại Bước 4 sửa → test lại → review lại. Chỉ khi **test PASS + review PASS** mới lên Bước 7. Nếu cùng một task bị Fail **2 lần liên tiếp** → `coder_agent` dừng (Halt & Query) và Product Owner can thiệp (xem doc-07 Mục 6.7).
-*   **Cổng QA của Product Owner (human_input=True):** đặt tại các mốc — (a) sau Bước 0 (duyệt `codebase-overview.md`, chỉ brownfield), (b) sau Bước 1 (duyệt yêu cầu), (c) sau Bước 2 (duyệt System Design), (d) sau Bước 3 (duyệt Detail Design & sơ đồ task), (e) Bước 7 (nghiệm thu code). Dù Reviewer là AI, cổng nghiệm thu của con người ở Bước 7 vẫn là chốt chặn cuối cùng.
+*   **Cổng QA của Product Owner (human_input=True):** đặt tại các mốc — (a) sau Bước 0 (duyệt `codebase-overview.md`, chỉ brownfield), (b) sau Bước 1 (duyệt yêu cầu), (c) sau Bước 2 (duyệt System Design), (c2) sau Bước 2.5 (duyệt Design System & UX Spec, chỉ khi có giao diện), (d) sau Bước 3 (duyệt Detail Design & sơ đồ task), (e) Bước 7 (nghiệm thu code). Dù Reviewer là AI, cổng nghiệm thu của con người ở Bước 7 vẫn là chốt chặn cuối cùng.
 
 ### 9.3. Sơ đồ luồng chốt
 
@@ -237,12 +239,17 @@ To maximize AI comprehension and prevent context dilution (especially important 
         [ QA GATE - PO ] ───────> Duyệt System Design
              │
              ▼
+    2.5 ui_ux_agent ──────────> Design System + UX Spec   (chỉ khi dự án có giao diện)
+             │
+        [ QA GATE - PO ] ───────> Duyệt UI/UX
+             │
+             ▼
     3. detail_designer_agent ─> Thiết kế chi tiết + Sơ đồ Task
              │
         [ QA GATE - PO ] ───────> Duyệt kiến trúc & thứ tự thi công
              │
              ▼
-    ┌───► 4. coder_agent ─────> Viết code (logic + UI)
+    ┌───► 4. backend_coder_agent [BE] / frontend_coder_agent [FE] ─> Viết code
     │        │
     │        ▼
     │    5. tester_agent ──> Test (task đã Coded; song song giữa task độc lập)
@@ -261,8 +268,10 @@ Mỗi bước là một agent riêng (thay thế danh sách 3 agent ở Mục 6)
 
 *   `ba_agent`              — role='Business Analyst' (Bước 1)
 *   `architect_agent`       — role='System Architect' (Bước 0 nếu brownfield, và Bước 2)
+*   `ui_ux_agent`           — role='UI/UX Designer' (Bước 2.5, chỉ khi có giao diện)
 *   `detail_designer_agent` — role='Detail Designer' (Bước 3)
-*   `coder_agent`           — role='Developer' (Bước 4)
+*   `backend_coder_agent`   — role='Backend Developer' (Bước 4, task `[BE]`)
+*   `frontend_coder_agent`  — role='Frontend Developer' (Bước 4, task `[FE]`)
 *   `tester_agent`          — role='QA & Test Engineer' (Bước 5: test)
 *   `reviewer_agent`        — role='Code Reviewer / QA Engineer' (Bước 6)
 
@@ -274,15 +283,16 @@ Product Owner (con người) giữ vai nghiệm thu ở Bước 7 và các cổn
 
 > This section finalizes and supersedes the draft flow in Section 4. This is the PO-approved standard workflow.
 
-### 9.1. Seven Steps & Ownership
+### 9.1. Steps & Ownership (seven main steps, plus Step 2.5 for projects with a UI)
 
 | Step | Phase | Agent | Output |
 | :---: | :--- | :--- | :--- |
 | 0 | Codebase Survey *(brownfield only, once per project)* | `architect_agent` | `codebase-overview.md` (existing architecture, conventions, build/lint/test commands) |
 | 1 | Requirements Analysis | `ba_agent` (Business Analyst) | PRD, User Stories, User Flow |
 | 2 | System Design | `architect_agent` (System Architect) | Architecture, tech stack, API contracts, ERD, coding conventions |
+| 2.5 | UI/UX Design *(only if the project has a UI)* | `ui_ux_agent` (UI/UX Designer) | Design System (tokens, components) + UX Spec (screens `SCR-xx`, flows, states, UI copy) |
 | 3 | Detailed Design (Tasks) | `detail_designer_agent` | Detail Design + Task map (dependency, priority) |
-| 4 | Coding | `coder_agent` | Logic code + UI/UX |
+| 4 | Coding | `backend_coder_agent` (`[BE]` tasks), `frontend_coder_agent` (`[FE]` tasks) | Backend code / UI code + Plan + Summary |
 | 5 | Testing | `tester_agent` | Unit/Integration/E2E tests + Test Report (tasks in `Coded` state; parallel across independent tasks) |
 | 6 | Review | `reviewer_agent` (SEPARATE agent) | Review report: pass/fail |
 | 7 | Acceptance | Product Owner | Final sign-off & deployment |
@@ -290,10 +300,11 @@ Product Owner (con người) giữ vai nghiệm thu ở Bước 7 và các cổn
 ### 9.2. Principles
 
 *   **Option A — one agent per step:** no role merging. Designer, coder, and reviewer are separate agents for clear ownership and to avoid overlap / self-bias.
+*   **Two coder variants:** `backend_coder_agent` handles only `[BE]` tasks, `frontend_coder_agent` handles only `[FE]` tasks (doc-04 process plus doc-09). `detail_designer_agent` tags every task `[BE]`/`[FE]`. `coder_agent` is used as a collective name when a rule applies to both.
 *   **Separate Reviewer agent:** the coder (`coder_agent`) and the reviewer (`reviewer_agent`) are distinct agents. An agent never reviews its own code. `tester_agent` is not used for review (weaker, misses architectural-standard issues).
 *   **Review checklist:** coding conventions, adherence to Detail Design, no redundant code, lint passing, tests covering the intended logic.
 *   **Fix loop:** Steps 4 → 5 → 6 form a loop. If Review fails → back to Step 4 → re-test → re-review. Only when tests PASS + review PASS does it advance to Step 7. If the same task fails **twice in a row** → `coder_agent` halts (Halt & Query) and the Product Owner intervenes (see doc-07 Section 6.7).
-*   **PO QA Gates (human_input=True):** at these milestones — (a) after Step 0 (approve `codebase-overview.md`, brownfield only), (b) after Step 1, (c) after Step 2 (approve System Design), (d) after Step 3 (approve Detail Design & task map), (e) Step 7. The human acceptance gate at Step 7 remains the final, non-removable checkpoint.
+*   **PO QA Gates (human_input=True):** at these milestones — (a) after Step 0 (approve `codebase-overview.md`, brownfield only), (b) after Step 1, (c) after Step 2 (approve System Design), (c2) after Step 2.5 (approve Design System & UX Spec, only if there is a UI), (d) after Step 3 (approve Detail Design & task map), (e) Step 7. The human acceptance gate at Step 7 remains the final, non-removable checkpoint.
 
 ### 9.4. CrewAI Configuration (Option A — fully separated agents)
 
@@ -301,8 +312,10 @@ Each step is its own agent (supersedes the 3-agent list in Section 6):
 
 *   `ba_agent`              — role='Business Analyst' (Step 1)
 *   `architect_agent`       — role='System Architect' (Step 0 if brownfield, and Step 2)
+*   `ui_ux_agent`           — role='UI/UX Designer' (Step 2.5, only if there is a UI)
 *   `detail_designer_agent` — role='Detail Designer' (Step 3)
-*   `coder_agent`           — role='Developer' (Step 4)
+*   `backend_coder_agent`   — role='Backend Developer' (Step 4, `[BE]` tasks)
+*   `frontend_coder_agent`  — role='Frontend Developer' (Step 4, `[FE]` tasks)
 *   `tester_agent`          — role='QA & Test Engineer' (Step 5: tests)
 *   `reviewer_agent`        — role='Code Reviewer / QA Engineer' (Step 6)
 
@@ -328,7 +341,7 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 *   Mã nguồn và comment trong code: **tiếng Anh**.
 
 ### 10.4. Agent ↔ Model là cấu hình, không phải danh tính
-*   Mỗi agent định danh theo **vai trò** (`ba_agent`, `architect_agent`, `detail_designer_agent`, `coder_agent`, `tester_agent`, `reviewer_agent`) — KHÔNG gán cứng vào bất kỳ hãng model nào.
+*   Mỗi agent định danh theo **vai trò** (`ba_agent`, `architect_agent`, `ui_ux_agent`, `detail_designer_agent`, `backend_coder_agent`, `frontend_coder_agent`, `tester_agent`, `reviewer_agent`) — KHÔNG gán cứng vào bất kỳ hãng model nào.
 *   Model (LLM) đứng sau mỗi agent chỉ là tham số cấu hình `llm=<model>`, có thể đổi bất cứ lúc nào (cloud hoặc local) mà không cần sửa tên agent, prompt hay logic pipeline.
 *   Đổi model = chỉ sửa đúng dòng `llm` của agent đó trong cấu hình CrewAI.
 
@@ -337,8 +350,9 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 *   Mỗi tài liệu bàn giao PHẢI mở đầu bằng một **Entry note** — một dòng chỉ rõ agent nhận bắt đầu đọc từ mục nào.
 *   Nguyên tắc: agent nhận đọc **phần định hướng công việc trước** (mục tiêu / danh sách việc), rồi tới đặc tả được tham chiếu, cuối cùng đối chiếu quy ước & tiêu chí chấp nhận. Cụ thể theo từng chặng:
     *   `architect_agent` đọc PRD: Tổng quan/Mục tiêu → User Stories (ưu tiên) → FR/NFR → Ràng buộc.
-    *   `detail_designer_agent` đọc System Design: Thành phần & Ranh giới → API contract → ERD → Coding Conventions; đọc PRD để lấy Acceptance Criteria.
-    *   `coder_agent` đọc Detail Design: **Sơ đồ Task trước** (chọn task theo ưu tiên/phụ thuộc) → đặc tả mà task tham chiếu → Coding Conventions (trong System Design) → Acceptance Criteria (trong PRD).
+    *   `ui_ux_agent` đọc PRD (User Stories → User Flow → Nền tảng mục tiêu) rồi System Design (tech stack frontend, UI library, API contract).
+    *   `detail_designer_agent` đọc System Design: Thành phần & Ranh giới → API contract → ERD → Coding Conventions; đọc PRD để lấy Acceptance Criteria; nếu có giao diện thì đọc UX Spec (danh sách màn hình `SCR-xx`).
+    *   `coder_agent` (`backend_coder_agent`/`frontend_coder_agent`; task `[FE]` đọc thêm UX Spec và Design System) đọc Detail Design: **Sơ đồ Task trước** (chọn task theo ưu tiên/phụ thuộc) → đặc tả mà task tham chiếu → Coding Conventions (trong System Design) → Acceptance Criteria (trong PRD).
     *   `tester_agent` đọc Detail Design: **Sơ đồ Task** (lọc task độc lập/song song) → Definition of Done + Acceptance Criteria từng task.
     *   `reviewer_agent` đọc: Coding Conventions + Detail Design + code, đối chiếu Acceptance Criteria/DoD.
 *   Luôn theo Context Isolation: chỉ nạp tài liệu của đúng module đang làm.
@@ -347,8 +361,8 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 ### 10.6. Bảng theo dõi Task (Task Tracker) & Vòng đời trạng thái
 *   **Nguồn sự thật duy nhất** về tiến độ task là một file Task Tracker dùng chung (một file/module, ví dụ `task-tracker.md`), do `detail_designer_agent` khởi tạo từ Sơ đồ Task (mọi task = `Todo`).
 *   **Vòng đời trạng thái:** `Todo` → `Planning` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. Khi `Test-Fail` / `Review-Fail` → `tester_agent`/`reviewer_agent` chỉ đặt trạng thái Fail; **chính `coder_agent` chuyển task về `In-Progress`** khi bắt đầu sửa.
-*   **Ai cập nhật:** `coder_agent` (`Planning`, `In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
-*   **Cấu trúc:** `Task ID | Mô tả | FR/US | Ưu tiên | Phụ thuộc | Trạng thái | Cập nhật bởi | Ghi chú`.
+*   **Ai cập nhật:** `coder_agent` — tức `backend_coder_agent` hoặc `frontend_coder_agent`, đúng nhãn task (`Planning`, `In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
+*   **Cấu trúc:** `Task ID | Loại (BE/FE) | Mô tả | FR/US | Ưu tiên | Phụ thuộc | Trạng thái | Cập nhật bởi | Ghi chú`.
 *   Post-Coding Summary và báo cáo test/review là chi tiết từng lượt; nhưng **trạng thái chuẩn luôn nằm ở Task Tracker**.
 
 
@@ -372,7 +386,7 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 *   Source code and code comments: **English**.
 
 ### 10.4. Agent ↔ Model is Config, Not Identity
-*   Each agent is identified by its **role** (`ba_agent`, `architect_agent`, `detail_designer_agent`, `coder_agent`, `tester_agent`, `reviewer_agent`) — NOT hardcoded to any model vendor.
+*   Each agent is identified by its **role** (`ba_agent`, `architect_agent`, `ui_ux_agent`, `detail_designer_agent`, `backend_coder_agent`, `frontend_coder_agent`, `tester_agent`, `reviewer_agent`) — NOT hardcoded to any model vendor.
 *   The model (LLM) behind each agent is just an `llm=<model>` config parameter, changeable anytime (cloud or local) without renaming agents or altering prompts/pipeline logic.
 *   Switching model = edit only that agent's `llm` line in the CrewAI configuration.
 
@@ -381,8 +395,9 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 *   Every handoff document MUST begin with an **Entry note** — one line stating where the receiving agent should start reading.
 *   Principle: the receiving agent reads the **work-orienting part first** (goals / work list), then the referenced specs, then checks conventions & acceptance criteria. Per stage:
     *   `architect_agent` reads the PRD: Overview/Goals → User Stories (priority) → FR/NFR → Constraints.
-    *   `detail_designer_agent` reads System Design: Components & Boundaries → API contracts → ERD → Coding Conventions; reads the PRD for Acceptance Criteria.
-    *   `coder_agent` reads Detail Design: **Task map first** (pick tasks by priority/dependency) → the specs each task references → Coding Conventions (in System Design) → Acceptance Criteria (in PRD).
+    *   `detail_designer_agent` reads System Design: Components & Boundaries → API contracts → ERD → Coding Conventions; reads the PRD for Acceptance Criteria; if there is a UI, also reads the UX Spec (screen list `SCR-xx`).
+    *   `ui_ux_agent` reads the PRD (User Stories → User Flow → Target Platform) then the System Design (frontend tech stack, UI library, API contracts).
+    *   `coder_agent` (`backend_coder_agent`/`frontend_coder_agent`; `[FE]` tasks also read the UX Spec and Design System) reads Detail Design: **Task map first** (pick tasks by priority/dependency) → the specs each task references → Coding Conventions (in System Design) → Acceptance Criteria (in PRD).
     *   `tester_agent` reads Detail Design: **Task map** (filter independent/parallel tasks) → each task's Definition of Done + Acceptance Criteria.
     *   `reviewer_agent` reads: Coding Conventions + Detail Design + code, checked against Acceptance Criteria/DoD.
 *   Always follow Context Isolation: load only the docs for the module currently in scope.
@@ -391,6 +406,6 @@ The Product Owner (human) owns acceptance at Step 7 and the QA gates (`human_inp
 ### 10.6. Task Tracker & Status Lifecycle
 *   The **single source of truth** for task progress is a shared Task Tracker file (one per module, e.g. `task-tracker.md`), created by `detail_designer_agent` from the Task map (every task = `Todo`).
 *   **Status lifecycle:** `Todo` → `Planning` → `In-Progress` → `Coded` → `Test-Pass` → `Review-Pass` → `Accepted`. On `Test-Fail` / `Review-Fail` → `tester_agent`/`reviewer_agent` only set the Fail status; **`coder_agent` itself moves the task back to `In-Progress`** when it starts fixing.
-*   **Who updates:** `coder_agent` (`Planning`, `In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
-*   **Columns:** `Task ID | Description | FR/US | Priority | Depends-on | Status | Updated-by | Notes`.
+*   **Who updates:** `coder_agent` — i.e. `backend_coder_agent` or `frontend_coder_agent`, matching the task label (`Planning`, `In-Progress`, `Coded`); `tester_agent` (`Test-Pass`/`Test-Fail`); `reviewer_agent` (`Review-Pass`/`Review-Fail`); Product Owner (`Accepted`).
+*   **Columns:** `Task ID | Type (BE/FE) | Description | FR/US | Priority | Depends-on | Status | Updated-by | Notes`.
 *   Post-Coding Summary and test/review reports are per-run detail; the **authoritative status always lives in the Task Tracker**.

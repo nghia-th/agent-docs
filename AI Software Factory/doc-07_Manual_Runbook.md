@@ -18,14 +18,16 @@
 
 ### 1.1. Tạo hồ sơ agent
 
-Tạo 6 "hồ sơ agent", mỗi cái nạp doc tương ứng làm **custom instruction** (Claude Project / Custom GPT / Gemini Gem):
+Tạo 8 "hồ sơ agent" (7 nếu dự án không có giao diện: bỏ `ui_ux_agent` và `frontend_coder_agent`), mỗi cái nạp doc tương ứng làm **custom instruction** (Claude Project / Custom GPT / Gemini Gem):
 
 | Agent | Doc nạp | Môi trường chạy |
 |---|---|---|
 | `ba_agent` | doc-01 | Chat app |
 | `architect_agent` | doc-02 | Chat app |
+| `ui_ux_agent` | doc-08 | Chat app |
 | `detail_designer_agent` | doc-03 | Chat app |
-| `coder_agent` | doc-04 | IDE agent |
+| `backend_coder_agent` | doc-04 | IDE agent |
+| `frontend_coder_agent` | doc-04 + doc-09 (nạp nối tiếp, doc-09 sau doc-04) | IDE agent |
 | `tester_agent` | doc-05 | IDE agent |
 | `reviewer_agent` | doc-06 | IDE agent / Chat |
 
@@ -37,7 +39,8 @@ Gán **model tùy vai** (đây chính là "model swappable" khi chạy tay):
 |---|---|---|
 | BA, Architect | Model mạnh (GPT-4o+, Claude Opus) | Cần suy luận sâu, phân tích ngữ cảnh lớn |
 | Detail Designer | Model mạnh (GPT-4o+, Claude Opus) | Cần độ chính xác cao khi phân rã task |
-| Coder | Model mạnh (GPT-4o+, Claude Sonnet+) | Code chính xác, bám sát convention |
+| UI/UX | Model mạnh, giỏi bố cục và ngôn ngữ giao diện | Thiết kế đặc tả giao diện nhất quán, đủ trạng thái |
+| Coder (backend, frontend) | Model mạnh (GPT-4o+, Claude Sonnet+) | Code chính xác, bám sát convention; frontend_coder có thể dùng model khác backend_coder |
 | Tester | Model trung bình (GPT-4o-mini, Claude Haiku) | Sinh test case/boilerplate, giảm chi phí |
 | Reviewer | Model mạnh (khác model Coder) | Tránh thiên kiến, bắt lỗi khách quan |
 
@@ -51,6 +54,7 @@ project-root/
     ├── codebase-overview.md ← Output bước 0 (brownfield)
     ├── prd.md              ← Output bước 1
     ├── system-design.md    ← Output bước 2
+    ├── ux/                 ← Output bước 2.5 (design-system.md, ux-spec-<module>.md)
     ├── detail-design.md    ← Output bước 3
     ├── task-tracker.md     ← Output bước 3 (khởi tạo)
     ├── plans/              ← Output bước 4 (plan_T-xx.md, mỗi task 1 file)
@@ -71,8 +75,9 @@ project-root/
 | 0. Khảo sát codebase *(brownfield, một lần)* | IDE agent | doc-02 (Mục 0) | Repo hiện có | `codebase-overview.md` | **PO duyệt** | — |
 | 1. Phân tích yêu cầu | Chat | doc-01 | Ý tưởng của anh | `prd.md` | **PO duyệt** | — |
 | 2. Thiết kế hệ thống | Chat | doc-02 | `prd.md` | `system-design.md` | **PO duyệt** | — |
-| 3. Thiết kế chi tiết + Task | Chat | doc-03 | `system-design.md` + `prd.md` | `detail-design.md` + `task-tracker.md` | **PO duyệt** | Khởi tạo |
-| 4. Code | IDE | doc-04 | `detail-design.md` + `task-tracker.md` | `plan_T-xx.md` → code + Post-Coding Summary | — | `Todo` → `Planning` → `In-Progress` → `Coded` |
+| 2.5. Thiết kế UI/UX *(chỉ khi có giao diện)* | Chat | doc-08 | `prd.md` + `system-design.md` | `docs/ux/design-system.md` + `ux-spec-<module>.md` | **PO duyệt** | — |
+| 3. Thiết kế chi tiết + Task | Chat | doc-03 | `system-design.md` + `prd.md` (+ `docs/ux/`) `detail-design.md` + `task-tracker.md` | **PO duyệt** | Khởi tạo |
+| 4. Code | IDE | doc-04 (backend); doc-04 + doc-09 (frontend) | `detail-design.md` + `task-tracker.md` (+ `docs/ux/` cho task FE) | `plan_T-xx.md` → code + Post-Coding Summary | — | `Todo` → `Planning` → `In-Progress` → `Coded` |
 | 5. Test | IDE | doc-05 | code task `Coded` | Test Report (+ Bug Report nếu fail) | — | `Test-Pass` / `Test-Fail` |
 | 6. Review | IDE/Chat | doc-06 | code task `Test-Pass` | Review Report | — | `Review-Pass` / `Review-Fail` |
 | 7. Nghiệm thu | Anh (PO) | — | tất cả output | Chấp nhận & triển khai | **PO nghiệm thu** | `Accepted` |
@@ -157,11 +162,33 @@ Yêu cầu đầu ra:
 
 **PO duyệt:** Xác nhận tech stack, kiến trúc, và coding conventions trước khi sang bước 3.
 
+### 2.2b. Bước 2.5 — Thiết kế UI/UX (UI/UX Agent, chỉ khi dự án có giao diện)
+
+**Chuẩn bị:**
+- Mở chat app, chọn hồ sơ `ui_ux_agent` (đã nạp doc-08).
+- Dán (hoặc trỏ tới) PRD đã duyệt của module cần thiết kế và `system-design.md` (tech stack frontend, UI library, API contract). Nếu dự án chia nhiều PRD: chạy từng module một, dùng chung Design System.
+
+**Prompt mẫu:**
+```
+Bạn là ui_ux_agent. Đọc doc-08 (đã nạp), PRD [file] và System Design [file].
+Nhiệm vụ: thiết kế UI/UX cho module này. Lần đầu: tạo docs/ux/design-system.md; sau đó tạo docs/ux/ux-spec-<module>.md.
+Việc đầu tiên: hỏi tôi TỪNG CÂU MỘT theo Mục 3.1 của doc-08 (kèm 2-3 phương án gợi ý, tôi có thể trả lời "tự quyết"). Khi hết câu hỏi, tóm tắt quyết định và giả định, rồi DỪNG. TUYỆT ĐỐI không ghi file cho đến khi tôi gõ "Approved".
+```
+
+**Kiểm tra đầu ra:**
+- [ ] `design-system.md` có token đặt tên và danh mục component; `ux-spec-<module>.md` có danh sách màn hình `SCR-xx`
+- [ ] Mọi `US`/`FR` có giao diện đều map tới màn hình; mọi màn hình map ngược `US`/`FR`
+- [ ] Mỗi màn hình đủ trạng thái Loading/Empty/Error/Success, nội dung chữ, responsive, tiếp cận
+- [ ] Mỗi vùng dữ liệu chỉ ra endpoint API; thiếu API được ghi ở mục "Đề nghị bổ sung cho Architect" (không tự thêm API)
+- [ ] Chỉ thiết kế cho nền tảng PRD yêu cầu; không có code sản phẩm; không có `[TBD]`
+
+**PO duyệt:** cổng QA sau Bước 2.5 — duyệt giao diện trước khi chia task. Mục "Đề nghị bổ sung cho Architect" nếu có thì PO chuyển cho `architect_agent` cập nhật System Design trước Bước 3.
+
 ### 2.3. Bước 3 — Thiết kế chi tiết & Lập Task (Detail Designer)
 
 **Chuẩn bị:**
 - Mở chat app, chọn hồ sơ `detail_designer_agent` (đã nạp doc-03).
-- Dán `prd.md` + `system-design.md` đã duyệt.
+- Dán `prd.md` + `system-design.md` đã duyệt (và `docs/ux/` nếu có giao diện).
 
 **Prompt mẫu:**
 ```
@@ -177,22 +204,23 @@ Yêu cầu đầu ra:
 1. Detail Design cho từng component/module (pseudocode, data flow, state management)
 2. Sơ đồ Task (Task Map) — phân rã công việc thành các task T-xx
 3. File task-tracker.md — tất cả task khởi tạo với status "Todo"
-   - Cột: Task ID | Description | FR/US | Priority | Depends-on | Status | Updated-by | Notes
+   - Cột: Task ID | Type (BE/FE) | Description | FR/US | Priority | Depends-on | Status | Updated-by | Notes
+4. Gắn nhãn [BE]/[FE] cho từng task; ánh xạ màn hình SCR-xx → API → task (không thiết kế lại giao diện)
 ```
 
 **Kiểm tra đầu ra:**
 - [ ] File `detail-design.md` — mỗi component có đặc tả/pseudocode rõ ràng
-- [ ] File `task-tracker.md` — mọi task = `Todo`, có dependency & priority
+- [ ] File `task-tracker.md` — mọi task = `Todo`, có dependency & priority, có nhãn loại BE/FE
 - [ ] Mỗi `T-xx` tham chiếu ngược `US-xx`/`FR-xx`
 - [ ] Task map tuân theo thứ tự ưu tiên MoSCoW
 - [ ] Không có `[TBD]`
 
 **PO duyệt:** Đây là cổng QA quan trọng — duyệt thứ tự thi công và phạm vi từng task.
 
-### 2.4. Bước 4 — Viết code (Coder Agent)
+### 2.4. Bước 4 — Viết code (Backend/Frontend Coder Agent)
 
 **Chuẩn bị:**
-- Mở IDE agent (Claude Code / Cursor), chọn hồ sơ `coder_agent` (đã nạp doc-04).
+- Mở IDE agent (Claude Code / Cursor), chọn hồ sơ theo nhãn task: task `[BE]` → `backend_coder_agent` (doc-04); task `[FE]` → `frontend_coder_agent` (doc-04 + doc-09). Mỗi agent chỉ làm task đúng nhãn.
 - Mở repo project. Đảm bảo agent đọc được file trong repo.
 
 **Prompt mẫu (giao 1 task):**
@@ -203,7 +231,7 @@ Yêu cầu đầu ra:
 - docs/system-design.md (phần Coding Conventions)
 - docs/prd.md (phần Acceptance Criteria)
 
-Chọn task đầu tiên thỏa: status = "Todo", priority = Must, không phụ thuộc task chưa xong.
+Chọn task đầu tiên thỏa: status = "Todo", đúng nhãn loại của agent này (BE hoặc FE), priority = Must, không phụ thuộc task chưa xong. Task FE đọc thêm docs/ux/ (màn hình SCR-xx liên quan + design-system.md).
 
 Thực hiện task đó:
 1. Đọc tracker + `docs/plans/` xem task nào đang dở (làm tiếp, không lập Plan lại); khảo sát code có sẵn để tái sử dụng
@@ -419,7 +447,7 @@ Dù đang chạy tay, hãy giữ cấu trúc sao cho dễ chuyển sang CrewAI s
 ## 8. Checklist vận hành (Quick Reference)
 
 ### Trước mỗi dự án mới
-- [ ] Đã tạo 6 hồ sơ agent với doc-01→06 làm custom instruction
+- [ ] Đã tạo 8 hồ sơ agent (7 nếu không có giao diện) với doc-01→09 làm custom instruction (frontend_coder_agent = doc-04 + doc-09)
 - [ ] Đã gán model phù hợp cho từng agent
 - [ ] Đã tạo thư mục `docs/` với cấu trúc chuẩn
 - [ ] Đã có ý tưởng/yêu cầu ban đầu từ PO
@@ -440,14 +468,14 @@ Dù đang chạy tay, hãy giữ cấu trúc sao cho dễ chuyển sang CrewAI s
 
 ## 9. Biểu mẫu tham khảo nhanh
 
-### 9.1. Prompt giao việc — Coder Agent
+### 9.1. Prompt giao việc — Coder Agent (backend hoặc frontend)
 
 ```
 Đọc các file trong repo:
 - docs/detail-design.md
 - docs/task-tracker.md
 
-Chọn task "Todo" ưu tiên cao nhất đã thỏa phụ thuộc.
+Chọn task "Todo" ưu tiên cao nhất, đúng nhãn loại của bạn (BE hoặc FE), đã thỏa phụ thuộc. Task FE: đọc thêm docs/ux/ (UX Spec + Design System).
 1. Lập Plan → docs/plans/plan_T-xx.md (Files, Functions, APIs, Order, Risks)
 2. Cập nhật tracker: status → "Planning"
 3. (PO kiểm tra Plan nếu muốn)
@@ -481,13 +509,13 @@ Chọn task "Todo" ưu tiên cao nhất đã thỏa phụ thuộc.
 ```markdown
 # Task Tracker — [Tên dự án]
 
-| Task ID | Description | FR/US | Priority | Depends-on | Status | Updated-by | Notes |
-|---|---|---|---|---|---|---|---|
-| T-01 | Khởi tạo project structure | FR-01 | Must | — | Accepted | PO | |
-| T-02 | Implement auth module | US-01 | Must | T-01 | Coded | coder_agent | |
-| T-03 | Implement auth middleware | US-01 | Must | T-01 | Test-Pass | tester_agent | |
-| T-04 | Build dashboard API | US-02 | Should | T-01 | In-Progress | coder_agent | |
-| T-05 | Build dashboard UI | US-02 | Should | T-01 | Todo | — | Chờ T-01 xong |
+| Task ID | Type | Description | FR/US | Priority | Depends-on | Status | Updated-by | Notes |
+|---|---|---|---|---|---|---|---|---|
+| T-01 | BE | Khởi tạo project structure | FR-01 | Must | — | Accepted | PO | |
+| T-02 | BE | Implement auth module | US-01 | Must | T-01 | Coded | backend_coder_agent | |
+| T-03 | BE | Implement auth middleware | US-01 | Must | T-01 | Test-Pass | tester_agent | |
+| T-04 | BE | Build dashboard API | US-02 | Should | T-01 | In-Progress | backend_coder_agent | |
+| T-05 | FE | Build dashboard UI (SCR-01) | US-02 | Should | T-04 | Todo | — | Chờ API T-04 hoặc dùng mock theo OpenAPI |
 ```
 
 ---

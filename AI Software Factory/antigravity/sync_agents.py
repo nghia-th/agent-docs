@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync doc-01..doc-06 into antigravity/.agents/agents/*.md.
+"""Sync doc-01..doc-09 into antigravity/.agents/agents/*.md.
 
 Each agent file = its own frontmatter (kept as-is) + "# Core Instructions" + the doc text.
 Usage:
@@ -12,26 +12,28 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent          # folder that holds doc-0X files
 AGENTS = Path(__file__).resolve().parent / ".agents" / "agents"
 MAP = {
-    "ba-agent": "doc-01_agent_BusinessAnalyst.md",
-    "architect-agent": "doc-02_agent_System Architect.md",
-    "detail-designer-agent": "doc-03_agent_Detail Design.md",
-    "coder-agent": "doc-04_agent_code.md",
-    "tester-agent": "doc-05_agent_test.md",
-    "reviewer-agent": "doc-06_agent_Reviewer.md",
+    "ba-agent": ["doc-01_agent_BusinessAnalyst.md"],
+    "architect-agent": ["doc-02_agent_System Architect.md"],
+    "ui-ux-agent": ["doc-08_agent_UI-UX.md"],
+    "detail-designer-agent": ["doc-03_agent_Detail Design.md"],
+    "backend-coder-agent": ["doc-04_agent_code.md"],
+    "frontend-coder-agent": ["doc-04_agent_code.md", "doc-09_agent_frontend-coder.md"],
+    "tester-agent": ["doc-05_agent_test.md"],
+    "reviewer-agent": ["doc-06_agent_Reviewer.md"],
 }
 
-def build(agent: str, doc: str) -> str:
+def build(agent: str, docs: list) -> str:
     target = AGENTS / f"{agent}.md"
     old = target.read_text(encoding="utf-8")
     end = old.index("\n---\n", 4) + 5                 # end of the frontmatter block
-    body = (ROOT / doc).read_text(encoding="utf-8")
+    body = "\n\n---\n\n".join((ROOT / d).read_text(encoding="utf-8") for d in docs)
     return old[:end] + "\n# Core Instructions\n\n" + body
 
 def main() -> int:
     check = "--check" in sys.argv
     stale = []
-    for agent, doc in MAP.items():
-        new = build(agent, doc)
+    for agent, docs in MAP.items():
+        new = build(agent, docs)
         target = AGENTS / f"{agent}.md"
         if target.read_text(encoding="utf-8") != new:
             stale.append(agent)
