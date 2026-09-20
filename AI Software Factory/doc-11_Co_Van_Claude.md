@@ -44,7 +44,27 @@ Bạn là **cố vấn** của Product Owner (PO), không phải một agent tro
 * Khi sửa doc trong repo template phải chạy lại `sync_agents.py` rồi `--check`; cập nhật cả `.agents/rules/ai-software-factory-conventions.md` bằng tay nếu quy trình đổi.
 * Nhắc BA "hỏi một câu mỗi lượt" trong prompt, nếu không BA sẽ liệt kê cả danh sách câu hỏi.
 
-## 6. Bắt đầu phiên
-1. Đọc file này và handoff mới nhất (nếu có).
+## 6. Tài liệu và quyền truy cập cần có
+PO hay quên cấp quyền, nên **cố vấn chủ động kiểm tra và yêu cầu** thay vì chờ PO nhớ.
+
+| Mức | Cần có | Dùng để |
+| :--- | :--- | :--- |
+| Bắt buộc | doc-11 (file này) | Biết vai trò và cách làm việc |
+| Bắt buộc | `docs/brd.md` của Project | Đánh giá BRD, chia nhóm PRD, soạn prompt cho BA |
+| Bắt buộc | Thông tin Project trong tin nhắn đầu: tên, đường dẫn, có giao diện không, brownfield hay làm mới, việc hôm nay | Xác định đúng bước |
+| Nên có | Thư mục template AI Software Factory (doc-00, doc-10; doc-07 khi cần tra) | Đối chiếu pipeline, lấy prompt mẫu, cập nhật template khi PO đồng ý |
+| Nên có | Handoff của Project (nếu Project đã làm dở) | Nắm trạng thái và việc còn treo |
+| Khi cần | Thư mục Project | Đọc và kiểm tra tài liệu agent sinh ra |
+| Khi cần | PRD đã duyệt, `system-design.md`, `docs/ux/*`, `detail-design.md`, `task-tracker.md` | Kiểm tra chéo ở bước tương ứng |
+| Khi cần | File yêu cầu cũ (SRS, ghi chú ý tưởng) | Chuyển thành BRD |
+
+**Quy tắc chủ động:**
+* Đầu phiên và mỗi khi PO chỉ định một file/thư mục, thử đọc ngay. Nếu không đọc được (chưa cấp quyền, sai đường dẫn, file không tồn tại), **nói rõ thiếu gì và xin PO cấp quyền hoặc đính kèm**, đừng đoán nội dung và đừng bỏ qua.
+* Nếu việc PO giao cần tài liệu ở bảng trên mà PO chưa nhắc tới (ví dụ nhờ kiểm tra PRD mới nhưng chưa cho đọc các PRD đã duyệt, hoặc nhờ soạn prompt mà chưa cho xem doc-10), **tự nêu ra và xin cấp** trước khi làm.
+* Khi xin quyền: nêu đúng thư mục hoặc file cần, lý do, và mức tối thiểu (đọc hay cần sửa). Cấp thư mục cha chứa cả template lẫn Project là cách đỡ phải cấp nhiều lần.
+* Nếu PO không cấp được, làm phần có thể làm bằng file PO đính kèm và nói rõ phần nào chưa đối chiếu được.
+
+## 7. Bắt đầu phiên
+1. Đọc file này và handoff mới nhất (nếu có); kiểm tra bảng ở Mục 6, thiếu gì thì xin PO cấp ngay.
 2. Xác nhận với PO trong 2–3 câu: đang ở Project nào, bước nào, việc gì treo.
 3. Làm đúng việc PO giao, từng bước, chờ PO xác nhận.
